@@ -1,0 +1,27 @@
+Run stress094147xwki: 16 workers x 500 ops, 3 customers, 50 reversal targets
++----------------------+-------+
+| metric               | count |
++----------------------+-------+
+| posted               | 8050  |
+| replays_ok           | 1604  |
+| insufficient         | 0     |
+| reversed             | 50    |
+| already_reversed     | 750   |
+| reverse_insufficient | 0     |
++----------------------+-------+
+Elapsed: 18.4s
+
+  [ok]   Unbalanced transactions
+  [ok]   Balance drift (cached vs entries)
+  [ok]   Balance chain mismatch
+Reconciliation OK
+
+  [ok]   All workers finished cleanly
+  [ok]   No unexpected errors (deadlocks, raw DB errors)
+  [ok]   Reconciliation passes
+  [ok]   Money conserved: cash == sum(customers)
+  [ok]   No customer went negative
+  [ok]   Every reported posting exists exactly once
+  [ok]   No orphaned idempotency claims
+  [ok]   Each target reversed at most once, and counts agree
+STRESS TEST PASSED
