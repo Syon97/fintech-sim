@@ -113,6 +113,10 @@ transaction having exactly one event, each event published exactly once across
 publishers, and each event delivered to the consumer exactly once. Raw output is
 in `docs/stress-results/`. The event contract is in `docs/events/transaction.posted.v1.md`.
 
+Fault injection: removing `FOR UPDATE SKIP LOCKED` made 4 publishers report 20,115
+publishes for 8,103 events. The consumer inbox still guaranteed exactly-once
+delivery, so correctness held while the duplicate work was caught by the stress check.
+
 ### Testing approach
 
 - Invariants were written as tests before the posting logic.
