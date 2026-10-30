@@ -3,11 +3,13 @@
 namespace App\Ledger;
 
 use App\Ledger\Exceptions\LedgerException;
+use App\Ledger\Events\OutboxWriter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class LedgerService
 {
+    public function __construct(private readonly OutboxWriter $outbox) {}
     private const SCOPE = 'ledger.post';
     private const TYPES = ['deposit', 'withdrawal', 'transfer', 'fee']; // reversals go through reverse()
 
@@ -134,7 +136,7 @@ final class LedgerService
                 }
             }
 
-            // 7. Persist entries and balances in the same transaction.
+            // 7a. Persist entries and balances in the same transaction.
             DB::table('entries')->insert($entries);
             foreach ($balances as $id => $final) {
                 DB::update(
@@ -142,6 +144,9 @@ final class LedgerService
                     [$final, $id],
                 );
             }
+
+            // 7b. Outbox: the event commits with the posting, or not at all.
+            $this->outbox->transactionPosted($txId, $type, $effectiveDate, $description, $reverses, $entries, $accounts);
 
             // 8. Record the outcome against the idempotency key.
             DB::table('idempotency_keys')
@@ -213,7 +218,7 @@ final class LedgerService
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
         $rows = DB::select(
-            "SELECT b.account_id, b.balance, a.normal_side, a.currency, a.status, a.allow_negative
+            "SELECT b.account_id, b.balance, a.account_number, a.type AS account_type, a.normal_side, a.currency, a.status, a.allow_negative
                FROM account_balances b
                JOIN accounts a ON a.id = b.account_id
               WHERE b.account_id IN ($placeholders)
