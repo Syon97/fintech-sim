@@ -12,7 +12,7 @@ under concurrency, auditability, and business-configurable controls.
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Ledger core: accounts, posting, idempotency, reversals, reconciliation, concurrency stress test | Done |
-| 2 | Event outbox between ledger and monitoring | Planned |
+| 2 | Event outbox between ledger and monitoring | Done |
 | 3 | Monitoring engine: configurable rules, alerts, backtesting | Planned |
 | 4 | Case management and analyst UI (React + TypeScript) | Planned |
 | 5 | Reporting, synthetic data generator, demo | Planned |
@@ -54,6 +54,9 @@ fintech-sim/
 | Entry currency matches account currency | Composite foreign key `(account_id, currency)` |
 | Cached balances match entry history | `ledger:reconcile` command; `balance_after` stored on every entry |
 | Failed postings leave no trace | Single database transaction, including the idempotency claim |
+| An event exists if and only if its transaction committed | Outbox row written in the posting's database transaction |
+| Each event is published once, even with concurrent publishers | `FOR UPDATE SKIP LOCKED`; consumer inbox with a primary key on `(consumer, event_id)` |
+| Event history cannot be rewritten | Trigger permits only delivery bookkeeping updates |
 
 The rules are enforced twice on purpose: in the service for clear errors, and in
 the database so that a bug in application code still cannot store a wrong ledger.
@@ -103,6 +106,12 @@ All 8 verification checks passed. Raw output is in `docs/stress-results/`.
 
 Timings are from a single development machine with the app, PostgreSQL and the
 workers sharing one box, so they are not a performance claim.
+
+Phase 2 added 4 publisher processes running *while* the workers post. Latest run
+(16 workers x 500 ops, 4 publishers): 14 of 14 checks passed, including every
+transaction having exactly one event, each event published exactly once across
+publishers, and each event delivered to the consumer exactly once. Raw output is
+in `docs/stress-results/`. The event contract is in `docs/events/transaction.posted.v1.md`.
 
 ### Testing approach
 
