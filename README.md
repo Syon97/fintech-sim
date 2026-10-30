@@ -117,6 +117,10 @@ Fault injection: removing `FOR UPDATE SKIP LOCKED` made 4 publishers report 20,1
 publishes for 8,103 events. The consumer inbox still guaranteed exactly-once
 delivery, so correctness held while the duplicate work was caught by the stress check.
 
+Fault injection: removing the account-ordering rule in the monitoring consumer produced 
+advisory-lock deadlocks. This exposed a publisher bug where a deadlock crashed the publisher, 
+which is now fixed.
+
 ### Testing approach
 
 - Invariants were written as tests before the posting logic.
@@ -192,6 +196,10 @@ ledger is append-only, its rows stay. `php artisan migrate:fresh` clears them.
 - No HTTP API yet. The concurrency guarantees live in the service and database,
   so an API will inherit them.
 - Synthetic data only. No real payment rails, KYC data or customer information.
+- Velocity counts depend on events being evaluated in order. Concurrent publishers 
+  can deliver two events for the same account out of order, which can undercount a window. 
+  Replay is sequential, so it is deterministic and can correct this. A proper fix, 
+  per-account sequencing, is a good follow-up.
 
 ## Roadmap
 
