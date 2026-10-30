@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Ledger\AccountService;
 use App\Ledger\LedgerService;
+use App\Monitoring\RuleAdmin;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -45,6 +46,13 @@ class LedgerStress extends Command
         }
 
         $this->info("Run $run: $workers workers x $ops ops, $customers customers, $targetCount reversal targets, $publishers publishers");
+
+        // ---- Monitoring rules for this run (retired again at the end) ----
+        $admin = app(RuleAdmin::class);
+        $largeVersion = $admin->define("$run-LARGE", 'large_amount', 'Stress: large amount', 'Stress test rule',
+            ['threshold_sen' => 4_500, 'directions' => ['D', 'C'], 'account_types' => ['liability']], 'high');
+        $veloVersion = $admin->define("$run-VELO", 'velocity', 'Stress: velocity', 'Stress test rule',
+            ['max_count' => 5, 'window_minutes' => 1, 'directions' => ['D', 'C'], 'account_types' => ['liability']], 'medium');
 
         // ---- Publishers run WHILE the workers post ----
         $stopFile = storage_path("framework/$run.stop");
@@ -135,6 +143,30 @@ class LedgerStress extends Command
         $delivered = $count("SELECT count(*) AS c FROM ($runTx) r JOIN outbox_events o ON $posted JOIN consumer_inbox ci ON ci.event_id = o.id AND ci.consumer = 'probe'");
         $mismatch = $count("SELECT count(*) AS c FROM ($runTx) r JOIN outbox_events o ON $posted
                              WHERE jsonb_array_length(o.payload->'entries') <> (SELECT count(*) FROM entries x WHERE x.transaction_id = r.id)");
+        
+        // ---- Verify monitoring: expected values come from the LEDGER, an independent source ----
+        $monDelivered = $count("SELECT count(*) AS c FROM ($runTx) r JOIN outbox_events o ON $posted JOIN consumer_inbox ci ON ci.event_id = o.id AND ci.consumer = 'monitoring'");
+        $runEntries = fn () => DB::table('entries as e')->join('accounts as a', 'a.id', '=', 'e.account_id')->where('a.account_number', 'like', $like);
+        $entryRows = (int) $runEntries()->count();
+        $expectedLarge = (int) $runEntries()->where('a.type', 'liability')->where('e.amount', '>=', 4_500)->count();
+        $activityRows = fn () => (int) DB::table('monitoring_activity')->where('account_number', 'like', $like)->count();
+        $alertCount = fn (int $versionId) => (int) DB::table('monitoring_alerts')->where('rule_version_id', $versionId)->count();
+
+        $largeBefore = $alertCount($largeVersion);
+        $veloBefore = $alertCount($veloVersion);
+        $activityBefore = $activityRows();
+
+        // Replay this run's history through monitoring: it must change nothing for large-amount alerts.
+        $firstEventId = (int) DB::selectOne("SELECT MIN(o.id) AS m FROM ($runTx) r JOIN outbox_events o ON $posted", [$like])->m;
+        $this->newLine();
+        $this->call('ledger:outbox-replay', ['consumer' => 'monitoring', '--from-id' => $firstEventId]);
+        $largeAfter = $alertCount($largeVersion);
+        $veloAfter = $alertCount($veloVersion);
+        $activityAfter = $activityRows();
+
+        $this->line("Velocity alerts: $veloBefore from live delivery, $veloAfter after sequential replay (any difference is the arrival-order effect)");
+
+        DB::table('monitoring_rule_versions')->whereIn('id', [$largeVersion, $veloVersion])->update(['status' => 'retired']);
 
         $this->newLine();
         $reconcileOk = $this->call('ledger:reconcile') === 0;
@@ -154,6 +186,11 @@ class LedgerStress extends Command
             ['Every event published, none failed or stuck', $unpublished === 0 && $retried === 0, "unpublished=$unpublished retried=$retried"],
             ['Each event published exactly once across all publishers', $publishedBy === $txCount + $backlog, "published=$publishedBy expected=" . ($txCount + $backlog)],
             ['Each event delivered to the consumer exactly once', $delivered === $txCount, "delivered=$delivered transactions=$txCount"],
+            ['Every event delivered to monitoring exactly once', $monDelivered === $txCount, "delivered=$monDelivered transactions=$txCount"],
+            ['Activity recorded exactly once per ledger entry', $activityBefore === $entryRows, "activity=$activityBefore entries=$entryRows"],
+            ['Large-amount alerts match an independent count from the ledger', $largeBefore === $expectedLarge, "alerts=$largeBefore expected=$expectedLarge"],
+            ['Velocity rule fired under load', $veloBefore > 0, "alerts=$veloBefore"],
+            ['Replay left large-amount alerts and activity unchanged', $largeAfter === $largeBefore && $activityAfter === $activityBefore, "alerts $largeBefore->$largeAfter activity $activityBefore->$activityAfter"],
         ];
 
         $this->newLine();
