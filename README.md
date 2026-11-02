@@ -13,7 +13,7 @@ under concurrency, auditability, and business-configurable controls.
 |---|---|---|
 | 1 | Ledger core: accounts, posting, idempotency, reversals, reconciliation, concurrency stress test | Done |
 | 2 | Event outbox between ledger and monitoring | Done |
-| 3 | Monitoring engine: configurable rules, alerts, backtesting | Planned |
+| 3 | Monitoring engine: configurable rules, alerts, backtesting | In progress (Slice 1: rules, versions, large amount, velocity. Slice 2: lifecycle, scoring, grouping) |
 | 4 | Case management and analyst UI (React + TypeScript) | Planned |
 | 5 | Reporting, synthetic data generator, demo | Planned |
 
@@ -57,6 +57,9 @@ fintech-sim/
 | An event exists if and only if its transaction committed | Outbox row written in the posting's database transaction |
 | Each event is published once, even with concurrent publishers | `FOR UPDATE SKIP LOCKED`; consumer inbox with a primary key on `(consumer, event_id)` |
 | Event history cannot be rewritten | Trigger permits only delivery bookkeeping updates |
+| Alerts cannot be edited after the fact | Trigger permits only workflow fields; closed alerts are final |
+| Alert status changes follow the allowed workflow | Service plus database trigger, with an append-only audit trail |
+| Replays never double-count scores or groups | Existence check before scoring; group counters verified by the stress test |
 
 The rules are enforced twice on purpose: in the service for clear errors, and in
 the database so that a bug in application code still cannot store a wrong ledger.

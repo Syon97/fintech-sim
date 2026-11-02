@@ -164,6 +164,16 @@ class LedgerStress extends Command
         $veloAfter = $alertCount($veloVersion);
         $activityAfter = $activityRows();
 
+        // Scores and groups, checked AFTER the replay so replay-created alerts are covered too.
+        $unscored = (int) DB::table('monitoring_alerts')->where('account_number', 'like', $like)
+            ->where(fn ($q) => $q->whereNull('risk_score')->orWhereNull('group_id'))->count();
+        $badGroups = (int) DB::selectOne(
+            'SELECT count(*) AS c FROM monitoring_alert_groups g
+              WHERE g.account_number LIKE ?
+                AND g.alert_count <> (SELECT count(*) FROM monitoring_alerts a WHERE a.group_id = g.id)',
+            [$like],
+        )->c;
+
         $this->line("Velocity alerts: $veloBefore from live delivery, $veloAfter after sequential replay (any difference is the arrival-order effect)");
 
         DB::table('monitoring_rule_versions')->whereIn('id', [$largeVersion, $veloVersion])->update(['status' => 'retired']);
@@ -191,6 +201,8 @@ class LedgerStress extends Command
             ['Large-amount alerts match an independent count from the ledger', $largeBefore === $expectedLarge, "alerts=$largeBefore expected=$expectedLarge"],
             ['Velocity rule fired under load', $veloBefore > 0, "alerts=$veloBefore"],
             ['Replay left large-amount alerts and activity unchanged', $largeAfter === $largeBefore && $activityAfter === $activityBefore, "alerts $largeBefore->$largeAfter activity $activityBefore->$activityAfter"],
+            ['Every alert has a risk score and a group', $unscored === 0, "unscored=$unscored"],
+            ['Group counters match their alerts exactly', $badGroups === 0, "bad_groups=$badGroups"],
         ];
 
         $this->newLine();
