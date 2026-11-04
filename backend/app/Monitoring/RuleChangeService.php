@@ -97,7 +97,7 @@ final class RuleChangeService
                 'checker' => $checker,
                 'decision_note' => $note,
                 'version_id' => $versionId,
-                'decided_at' => now(),
+                'decided_at' => DB::raw('now()'),
             ]);
 
             return $versionId;
@@ -117,7 +117,7 @@ final class RuleChangeService
                 'status' => 'rejected',
                 'checker' => $checker,
                 'decision_note' => $note,
-                'decided_at' => now(),
+                'decided_at' => DB::raw('now()'),
             ]);
         });
     }
@@ -136,7 +136,7 @@ final class RuleChangeService
             }
 
             DB::table('monitoring_rule_change_requests')->where('id', $requestId)
-                ->update(['status' => 'withdrawn', 'decided_at' => now()]);
+                ->update(['status' => 'withdrawn', 'decided_at' => DB::raw('now()')]);
         });
     }
 

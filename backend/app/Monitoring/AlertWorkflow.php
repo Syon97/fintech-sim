@@ -11,7 +11,7 @@ final class AlertWorkflow
     public function start(int $alertId, string $actor): void
     {
         $this->assertActor($actor);
-        $this->move($alertId, 'open', 'investigating', $actor, null, ['assigned_to' => $actor], false);
+        $this->move($alertId, 'open', 'investigating', $actor, null, ['assigned_to' => $actor], false, $actor);
     }
 
     public function release(int $alertId, string $actor, ?string $note = null): void
@@ -34,9 +34,43 @@ final class AlertWorkflow
             ['disposition' => $disposition, 'closed_at' => now()], true);
     }
 
-    private function move(int $alertId, string $from, string $to, string $actor, ?string $note, array $changes, bool $requireAssignee): void
+    /** A supervisor hands an alert that is being worked to someone else. */
+    public function reassign(int $alertId, string $actor, string $to, ?string $note = null): void
     {
-        DB::transaction(function () use ($alertId, $from, $to, $actor, $note, $changes, $requireAssignee) {
+        $this->assertActor($actor);
+        $this->assertActor($to);
+        $note = $note !== null && trim($note) !== '' ? trim($note) : null;
+
+        DB::transaction(function () use ($alertId, $actor, $to, $note) {
+            $alert = DB::table('monitoring_alerts')->where('id', $alertId)->lockForUpdate()->first();
+
+            if ($alert === null) {
+                throw AlertException::notFound($alertId);
+            }
+            if ($alert->status !== 'investigating') {
+                throw AlertException::illegalTransition($alertId, $alert->status, 'investigating');
+            }
+            if ($alert->assigned_to === $to) {
+                throw AlertException::invalidInput('That person is already working this alert.');
+            }
+
+            DB::table('monitoring_alerts')->where('id', $alertId)
+                ->update(['assigned_to' => $to, 'updated_at' => now()]);
+
+            DB::table('monitoring_alert_events')->insert([
+                'alert_id' => $alertId,
+                'from_status' => 'investigating',
+                'to_status' => 'investigating',
+                'actor' => $actor,
+                'note' => $note,
+                'assigned_to' => $to,
+            ]);
+        });
+    }
+
+    private function move(int $alertId, string $from, string $to, string $actor, ?string $note, array $changes, bool $requireAssignee, ?string $eventAssignee = null): void
+    {
+        DB::transaction(function () use ($alertId, $from, $to, $actor, $note, $changes, $requireAssignee, $eventAssignee) {
             $alert = DB::table('monitoring_alerts')->where('id', $alertId)->lockForUpdate()->first();
 
             if ($alert === null) {
@@ -58,6 +92,7 @@ final class AlertWorkflow
                 'to_status' => $to,
                 'actor' => $actor,
                 'note' => $note,
+                'assigned_to' => $eventAssignee,
             ]);
         });
     }
