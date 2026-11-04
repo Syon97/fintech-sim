@@ -13,6 +13,7 @@ final class MonitoringConsumer implements EventConsumer
 
     public function __construct(
         private readonly ActivityStore $activity,
+        private readonly CounterpartyStore $counterparties,
         private readonly RuleRepository $rules,
         private readonly RuleRegistry $registry,
         private readonly AlertWriter $alerts,
@@ -29,16 +30,11 @@ final class MonitoringConsumer implements EventConsumer
             return;
         }
         if ($event->schemaVersion !== 1) {
-            // Fail loudly: the event is quarantined, not silently misread.
             throw new RuntimeException("Unsupported transaction.posted schema version {$event->schemaVersion}");
         }
 
-        // Evaluate one event per account at a time, in ascending account id order
-        // (same rule as the ledger: no deadlocks). The lock is released when the
-        // publisher's per-event transaction ends.
         $ids = array_values(array_unique(array_column($event->payload['entries'], 'account_id')));
         sort($ids);
-
         foreach ($ids as $id) {
             DB::select('SELECT pg_advisory_xact_lock(?::int, ?::int)', [self::LOCK_NAMESPACE, $id]);
         }
@@ -51,5 +47,8 @@ final class MonitoringConsumer implements EventConsumer
                 $this->alerts->write($version, $event, $finding);
             }
         }
+
+        // After the rules on purpose: rules ask "was this beneficiary known BEFORE this event?"
+        $this->counterparties->record($event);
     }
 }

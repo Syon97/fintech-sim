@@ -48,4 +48,22 @@ final class Params
         return in_array($entry['direction'], self::directions($p), true)
             && in_array($entry['account_type'], self::accountTypes($p), true);
     }
+
+        public static function intBetween(array $p, string $key, int $min, int $max): int
+    {
+        $v = $p[$key] ?? null;
+        if (! is_int($v) || $v < $min || $v > $max) {
+            throw new InvalidArgumentException("Parameter '$key' must be an integer between $min and $max");
+        }
+
+        return $v;
+    }
+
+    public static function validateAccountTypes(array $p): void
+    {
+        $t = self::accountTypes($p);
+        if ($t === [] || array_diff($t, self::ACCOUNT_TYPES) !== []) {
+            throw new InvalidArgumentException("Parameter 'account_types' must be a non-empty subset of " . implode(', ', self::ACCOUNT_TYPES));
+        }
+    }
 }

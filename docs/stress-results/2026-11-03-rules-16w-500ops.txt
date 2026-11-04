@@ -1,0 +1,49 @@
+Run stress003031rezj: 16 workers x 500 ops, 3 customers, 50 reversal targets, 4 publishers
++----------------------+-------+
+| metric               | count |
++----------------------+-------+
+| posted               | 8050  |
+| replays_ok           | 1604  |
+| insufficient         | 0     |
+| reversed             | 50    |
+| already_reversed     | 750   |
+| reverse_insufficient | 0     |
+| events_published     | 8103  |
++----------------------+-------+
+Elapsed: 223.3s
+
+Replayed 8103 events to 'monitoring'
+Velocity alerts: 3 from live delivery, 3 after sequential replay (any difference is the arrival-order effect)
+
+  [ok]   Unbalanced transactions
+  [ok]   Balance drift (cached vs entries)
+  [ok]   Balance chain mismatch
+Reconciliation OK
+
+  [ok]   All workers finished cleanly
+  [ok]   No unexpected errors (deadlocks, raw DB errors)
+  [ok]   Reconciliation passes
+  [ok]   Money conserved: cash == sum(customers)
+  [ok]   No customer went negative
+  [ok]   Every reported posting exists exactly once
+  [ok]   No orphaned idempotency claims
+  [ok]   Each target reversed at most once, and counts agree
+  [ok]   Every committed transaction has exactly one event
+  [ok]   Event payloads match the ledger entries
+  [ok]   Publishers finished cleanly
+  [ok]   Every event published, none failed or stuck
+  [ok]   Each event published exactly once across all publishers
+  [ok]   Each event delivered to the consumer exactly once
+  [ok]   Every event delivered to monitoring exactly once
+  [ok]   Activity recorded exactly once per ledger entry
+  [ok]   Large-amount alerts match an independent count from the ledger
+  [ok]   Velocity rule fired under load
+  [ok]   Replay left large-amount alerts and activity unchanged
+  [ok]   Every alert has a risk score and a group
+  [ok]   Group counters match their alerts exactly
+  [ok]   Counterparty history matches an independent derivation from the ledger
+  [ok]   Structuring rule fired under load
+  [ok]   Rapid in-and-out rule fired under load
+  [ok]   New-beneficiary rule fired under load
+  [ok]   Replay left new-beneficiary alerts unchanged
+STRESS TEST PASSED

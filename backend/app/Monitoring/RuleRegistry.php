@@ -3,7 +3,10 @@
 namespace App\Monitoring;
 
 use App\Monitoring\Rules\LargeAmountRule;
+use App\Monitoring\Rules\NewBeneficiaryRule;
+use App\Monitoring\Rules\RapidInOutRule;
 use App\Monitoring\Rules\Rule;
+use App\Monitoring\Rules\StructuringRule;
 use App\Monitoring\Rules\VelocityRule;
 use InvalidArgumentException;
 
@@ -14,7 +17,10 @@ final class RuleRegistry
 
     public function __construct()
     {
-        foreach ([new LargeAmountRule(), new VelocityRule()] as $rule) {
+        foreach ([
+            new LargeAmountRule(), new VelocityRule(), new StructuringRule(),
+            new RapidInOutRule(), new NewBeneficiaryRule(),
+        ] as $rule) {
             $this->rules[$rule->type()] = $rule;
         }
     }

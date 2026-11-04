@@ -53,6 +53,12 @@ class LedgerStress extends Command
             ['threshold_sen' => 4_500, 'directions' => ['D', 'C'], 'account_types' => ['liability']], 'high');
         $veloVersion = $admin->define("$run-VELO", 'velocity', 'Stress: velocity', 'Stress test rule',
             ['max_count' => 5, 'window_minutes' => 1, 'directions' => ['D', 'C'], 'account_types' => ['liability']], 'medium');
+        $structVersion = $admin->define("$run-STRUCT", 'structuring', 'Stress: structuring', 'Stress test rule',
+            ['threshold_sen' => 5_000, 'band_percent' => 10, 'min_count' => 3, 'window_minutes' => 1, 'directions' => ['D', 'C'], 'account_types' => ['liability']], 'high');
+        $rapidVersion = $admin->define("$run-RAPID", 'rapid_in_out', 'Stress: rapid in-out', 'Stress test rule',
+            ['min_amount_sen' => 10_000, 'out_percent' => 50, 'window_minutes' => 1, 'account_types' => ['liability']], 'high');
+        $benefVersion = $admin->define("$run-BENEF", 'new_beneficiary', 'Stress: new beneficiary', 'Stress test rule',
+            ['threshold_sen' => 1_000, 'account_types' => ['liability']], 'medium');
 
         // ---- Publishers run WHILE the workers post ----
         $stopFile = storage_path("framework/$run.stop");
@@ -155,6 +161,9 @@ class LedgerStress extends Command
         $largeBefore = $alertCount($largeVersion);
         $veloBefore = $alertCount($veloVersion);
         $activityBefore = $activityRows();
+        $structBefore = $alertCount($structVersion);
+        $rapidBefore = $alertCount($rapidVersion);
+        $benefBefore = $alertCount($benefVersion);
 
         // Replay this run's history through monitoring: it must change nothing for large-amount alerts.
         $firstEventId = (int) DB::selectOne("SELECT MIN(o.id) AS m FROM ($runTx) r JOIN outbox_events o ON $posted", [$like])->m;
@@ -174,9 +183,32 @@ class LedgerStress extends Command
             [$like],
         )->c;
 
+        $structAfter = $alertCount($structVersion);
+        $rapidAfter = $alertCount($rapidVersion);
+        $benefAfter = $alertCount($benefVersion);
+
+        // Counterparty history, derived independently from the LEDGER: one row per (sender, beneficiary)
+        // pair, with the earliest event id. The outbox gives the event id, entries give the pair.
+        $expectedPairs = collect(DB::select(
+            "SELECT d.account_id AS sender, c.account_id AS beneficiary, MIN(o.id) AS first_event
+               FROM entries d
+               JOIN entries c ON c.transaction_id = d.transaction_id AND c.direction = 'C'
+               JOIN transactions t ON t.id = d.transaction_id AND t.type = 'transfer'
+               JOIN accounts a ON a.id = d.account_id
+               JOIN outbox_events o ON o.aggregate_id = d.transaction_id::text AND o.event_type = 'transaction.posted'
+              WHERE d.direction = 'D' AND a.account_number LIKE ?
+              GROUP BY d.account_id, c.account_id",
+            [$like],
+        ))->mapWithKeys(fn ($r) => ["{$r->sender}>{$r->beneficiary}" => (int) $r->first_event]);
+        $storedPairs = DB::table('monitoring_counterparties')->where('account_number', 'like', $like)->get()
+            ->mapWithKeys(fn ($r) => ["{$r->account_id}>{$r->counterparty_account_id}" => (int) $r->first_seen_event_id]);
+        $pairDiff = $expectedPairs->diffAssoc($storedPairs)->count() + $storedPairs->diffAssoc($expectedPairs)->count();
+
         $this->line("Velocity alerts: $veloBefore from live delivery, $veloAfter after sequential replay (any difference is the arrival-order effect)");
 
-        DB::table('monitoring_rule_versions')->whereIn('id', [$largeVersion, $veloVersion])->update(['status' => 'retired']);
+        DB::table('monitoring_rule_versions')
+            ->whereIn('id', [$largeVersion, $veloVersion, $structVersion, $rapidVersion, $benefVersion])
+            ->update(['status' => 'retired']);
 
         $this->newLine();
         $reconcileOk = $this->call('ledger:reconcile') === 0;
@@ -203,6 +235,11 @@ class LedgerStress extends Command
             ['Replay left large-amount alerts and activity unchanged', $largeAfter === $largeBefore && $activityAfter === $activityBefore, "alerts $largeBefore->$largeAfter activity $activityBefore->$activityAfter"],
             ['Every alert has a risk score and a group', $unscored === 0, "unscored=$unscored"],
             ['Group counters match their alerts exactly', $badGroups === 0, "bad_groups=$badGroups"],
+            ['Counterparty history matches an independent derivation from the ledger', $pairDiff === 0, "differences=$pairDiff expected={$expectedPairs->count()} stored={$storedPairs->count()}"],
+            ['Structuring rule fired under load', $structBefore > 0, "alerts=$structBefore"],
+            ['Rapid in-and-out rule fired under load', $rapidBefore > 0, "alerts=$rapidBefore"],
+            ['New-beneficiary rule fired under load', $benefBefore > 0, "alerts=$benefBefore"],
+            ['Replay left new-beneficiary alerts unchanged', $benefAfter === $benefBefore, "alerts $benefBefore->$benefAfter"],
         ];
 
         $this->newLine();
