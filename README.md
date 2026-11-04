@@ -13,7 +13,7 @@ under concurrency, auditability, and business-configurable controls.
 |---|---|---|
 | 1 | Ledger core: accounts, posting, idempotency, reversals, reconciliation, concurrency stress test | Done |
 | 2 | Event outbox between ledger and monitoring | Done |
-| 3 | Monitoring engine: configurable rules, alerts, backtesting | In progress (Slice 1: rules, versions, large amount, velocity. Slice 2: lifecycle, scoring, grouping) |
+| 3 | Monitoring engine: configurable rules, alerts, backtesting | In progress (rules, alert lifecycle and scoring, maker-checker rule changes) |
 | 4 | Case management and analyst UI (React + TypeScript) | Planned |
 | 5 | Reporting, synthetic data generator, demo | Planned |
 
@@ -60,6 +60,10 @@ fintech-sim/
 | Alerts cannot be edited after the fact | Trigger permits only workflow fields; closed alerts are final |
 | Alert status changes follow the allowed workflow | Service plus database trigger, with an append-only audit trail |
 | Replays never double-count scores or groups | Existence check before scoring; group counters verified by the stress test |
+| A rule change needs two different people | Maker-checker: service check plus `CHECK (checker <> maker)` |
+| Approved rule changes go live atomically | One database transaction; concurrent approvals serialized by a row lock |
+| Rule change history cannot be rewritten | Trigger: proposals immutable, decisions final, no deletes |
+| Only one change per rule can be open | Partial unique index |
 
 The rules are enforced twice on purpose: in the service for clear errors, and in
 the database so that a bug in application code still cannot store a wrong ledger.
@@ -192,17 +196,31 @@ ledger is append-only, its rows stay. `php artisan migrate:fresh` clears them.
 ## Known limitations
 
 - Single currency only. FX is out of scope.
+
 - The stress workload does not exercise the overdraft path under contention
   (balances are large relative to transfers). Overdraft is covered by unit tests.
+
 - If a client retries across midnight without supplying an effective date, the
   request hash changes. The HTTP layer will require the date explicitly.
+
 - No HTTP API yet. The concurrency guarantees live in the service and database,
   so an API will inherit them.
+
 - Synthetic data only. No real payment rails, KYC data or customer information.
+
 - Velocity counts depend on events being evaluated in order. Concurrent publishers 
   can deliver two events for the same account out of order, which can undercount a window. 
   Replay is sequential, so it is deterministic and can correct this. A proper fix, 
   per-account sequencing, is a good follow-up.
+
+- Actor names are plain strings, so identity is spoofable until authentication and 
+  roles arrive in Phase 4. The four-eyes rule is only as strong as the identity behind it.
+
+- RuleAdmin::define() remains as the low-level primitive. Only the approval workflow, the 
+  default-rule installer and the stress test call it, and a test enforces that list. 
+  Its a code-level guard, not a database one.
+
+- A checker approves without seeing the rules impact. Thats why Slice 5 exists.
 
 ## Roadmap
 

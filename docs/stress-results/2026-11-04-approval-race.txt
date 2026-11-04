@@ -1,0 +1,17 @@
+Run race030047jzos: 12 checkers racing over 40 requests
++---------------------------------+-------+
+| metric                          | count |
++---------------------------------+-------+
+| approvals won                   | 40    |
+| lost the race (ALREADY_DECIDED) | 440   |
++---------------------------------+-------+
+Elapsed: 0.9s
+Wins per checker: checker.1=40
+
+  [ok]   All checkers finished cleanly
+  [ok]   No unexpected errors (raw database errors, duplicates)
+  [ok]   A maker cannot approve their own request
+  [ok]   Every request approved exactly once
+  [ok]   Every lost race was a clean ALREADY_DECIDED
+  [ok]   Exactly one version created per rule, and it went live
+APPROVAL RACE PASSED
