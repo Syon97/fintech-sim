@@ -96,11 +96,11 @@ class RuleChangeTest extends TestCase
         $this->assertSame($versionId, (int) $alert->rule_version_id);
 
         // Alert -> rule version -> the approved change: who proposed, who approved, and why.
-        $req = DB::table('monitoring_rule_change_requests')
-            ->where('version_id', $alert->rule_version_id)->where('change_type', 'define')->first();
+        $req = DB::table('monitoring_rule_change_requests')->where('version_id', $alert->rule_version_id)->where('change_type', 'define')->first();
         $this->assertSame(['maker.m', 'checker.c', 'approved', 'Initial rule'], [$req->maker, $req->checker, $req->status, $req->reason]);
         $this->assertSame('Looks right', $req->decision_note);
         $this->assertNotNull($req->decided_at);
+        $this->assertGreaterThanOrEqual(strtotime($req->created_at), strtotime($req->decided_at));
     }
 
     public function test_the_maker_cannot_approve_or_reject_their_own_request(): void

@@ -12,7 +12,7 @@ use Throwable;
 
 class MonitoringApprovalRace extends Command
 {
-    protected $signature = 'monitoring:approval-race {--checkers=6} {--requests=20} {--worker=} {--run=}';
+    protected $signature = 'monitoring:approval-race {--checkers=6} {--requests=20} {--worker=} {--run=} {--start-at=}';
     protected $description = 'Several checkers race to approve the same requests; prove each is approved exactly once';
 
     public function handle(RuleChangeService $svc): int
@@ -26,6 +26,8 @@ class MonitoringApprovalRace extends Command
         $w = (int) $this->option('worker');
         $ids = DB::table('monitoring_rule_change_requests')->where('rule_code', 'like', "$run-R%")->orderBy('id')->pluck('id');
         $s = ['approved' => 0, 'already_decided' => 0, 'unexpected' => []];
+
+        while (microtime(true) < (float) $this->option('start-at')) { usleep(500); }
 
         foreach ($ids as $id) { // every worker attacks the SAME requests in the SAME order
             try {
@@ -69,9 +71,10 @@ class MonitoringApprovalRace extends Command
         $this->info("Run $run: $checkers checkers racing over $n requests");
 
         $started = microtime(true);
+        $startAt = microtime(true) + 4;
         $procs = [];
         for ($w = 1; $w <= $checkers; $w++) {
-            $p = new Process([PHP_BINARY, base_path('artisan'), 'monitoring:approval-race', "--worker=$w", "--run=$run"], base_path());
+            $p = new Process([PHP_BINARY, base_path('artisan'), 'monitoring:approval-race', "--worker=$w", "--run=$run", "--start-at=$startAt"], base_path());
             $p->setTimeout(300);
             $p->start();
             $procs[$w] = $p;
