@@ -13,8 +13,8 @@ under concurrency, auditability, and business-configurable controls.
 |---|---|---|
 | 1 | Ledger core: accounts, posting, idempotency, reversals, reconciliation, concurrency stress test | Done |
 | 2 | Event outbox between ledger and monitoring | Done |
-| 3 | Monitoring engine: configurable rules, alerts, backtesting | In progress (rules, alert lifecycle and scoring, maker-checker rule changes) |
-| 4 | Case management and analyst UI (React + TypeScript) | Planned |
+| 3 | Monitoring engine: configurable rules, alerts, backtesting | Done |
+| 4 | Case management and analyst UI (React + TypeScript) | In progress (Slice 1: accounts, roles, authentication) |
 | 5 | Reporting, synthetic data generator, demo | Planned |
 
 ## Architecture
@@ -64,6 +64,10 @@ fintech-sim/
 | Approved rule changes go live atomically | One database transaction; concurrent approvals serialized by a row lock |
 | Rule change history cannot be rewritten | Trigger: proposals immutable, decisions final, no deletes |
 | Only one change per rule can be open | Partial unique index |
+| Login reveals nothing about who exists | One response for wrong password, unknown user and deactivated account |
+| Login attempts are limited and recorded | Throttle per username and address; append-only auth audit trail |
+| Identities never change or disappear | Username fixed and users undeletable (triggers), so history always resolves |
+| Rule administration and alert work are separate duties | Role permissions plus four-eyes between two rule_admin users |
 
 The rules are enforced twice on purpose: in the service for clear errors, and in
 the database so that a bug in application code still cannot store a wrong ledger.
