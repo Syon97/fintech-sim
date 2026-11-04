@@ -222,6 +222,16 @@ ledger is append-only, its rows stay. `php artisan migrate:fresh` clears them.
 
 - A checker approves without seeing the rules impact. Thats why Slice 5 exists.
 
+- Backtesting only covers history monitoring processed. It says nothing about fraud the 
+  rule would have caught but that never happened.
+
+- Approval doesnt require a backtest yet, so thats a policy decision for later.
+
+- A backtest on a big history is one long transaction.
+
+- Alert counts show volume, not correctness. Without labelled outcomes you cant compute 
+  precision, which is why false-positive discussion stays in the catalogue.
+
 ## Roadmap
 
 1. **Outbox (Phase 2).** `transaction.posted` events written in the same database
