@@ -1,12 +1,12 @@
-Run race030047jzos: 12 checkers racing over 40 requests
+Run race032919hscx: 12 checkers racing over 200 requests
 +---------------------------------+-------+
 | metric                          | count |
 +---------------------------------+-------+
-| approvals won                   | 40    |
-| lost the race (ALREADY_DECIDED) | 440   |
+| approvals won                   | 200   |
+| lost the race (ALREADY_DECIDED) | 2200  |
 +---------------------------------+-------+
-Elapsed: 0.9s
-Wins per checker: checker.1=40
+Elapsed: 4.9s
+Wins per checker: checker.2=200
 
   [ok]   All checkers finished cleanly
   [ok]   No unexpected errors (raw database errors, duplicates)
