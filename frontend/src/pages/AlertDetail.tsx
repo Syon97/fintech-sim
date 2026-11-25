@@ -117,9 +117,9 @@ export function AlertDetail() {
       <ol className="timeline">
         {a.timeline.map((t, i) => (
           <li key={i}>
-            {t.actor ? `${t.actor}: ` : ''}{t.sentence}
+            {t.sentence}
             {t.note && <div>“{t.note}”</div>}
-            <span className="muted"><time dateTime={t.at} title={exactTime(t.at)}>{relativeTime(t.at)}</time></span>
+            <span className="muted"> <time dateTime={t.at} title={exactTime(t.at)}>{relativeTime(t.at)}</time></span>
           </li>
         ))}
       </ol>

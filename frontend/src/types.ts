@@ -31,7 +31,7 @@ export interface Evidence {
   occurred_at: string;
 }
 
-export interface TimelineEntry { at: string; actor: string | null; sentence: string; note: string | null }
+export interface TimelineEntry { at: string; actor: unknown; sentence: string; note: string | null }
 
 export interface AlertDetail extends AlertSummary {
   rule: { code: string; name: string; version: number; rationale: string };
