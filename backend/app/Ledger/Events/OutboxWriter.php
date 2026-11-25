@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 final class OutboxWriter
 {
     public const TRANSACTION_POSTED = 'transaction.posted';
+    public const ACCOUNT_FROZEN = 'account.frozen';
+    public const ACCOUNT_UNFROZEN = 'account.unfrozen';
     public const SCHEMA_VERSION = 1;
 
     /**
@@ -46,6 +48,35 @@ final class OutboxWriter
             'schema_version' => self::SCHEMA_VERSION,
             'aggregate_type' => 'transaction',
             'aggregate_id' => $txId,
+            'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+        ]);
+    }
+
+    /** Also written inside the status change's own transaction: no change without its event. */
+    public function accountStatusChanged(
+        string $eventType,
+        int $changeId,
+        object $account,
+        string $from,
+        string $to,
+        string $actor,
+        string $reason,
+    ): void {
+        $payload = [
+            'account_id' => (int) $account->id,
+            'account_number' => $account->account_number,
+            'from_status' => $from,
+            'to_status' => $to,
+            'actor' => $actor,
+            'reason' => $reason,
+            'change_id' => $changeId,
+        ];
+
+        DB::table('outbox_events')->insert([
+            'event_type' => $eventType,
+            'schema_version' => self::SCHEMA_VERSION,
+            'aggregate_type' => 'account',
+            'aggregate_id' => (string) $account->id,
             'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
         ]);
     }

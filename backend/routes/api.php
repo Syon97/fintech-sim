@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CaseController;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -26,5 +27,20 @@ Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function (
     Route::middleware('can:alerts.reassign')->group(function () {
         Route::post('/alerts/{alert}/reassign', [AlertController::class, 'reassign'])->whereNumber('alert');
         Route::get('/assignees', [AlertController::class, 'assignees']);
+    });
+
+    Route::middleware('can:cases.view')->group(function () {
+        Route::get('/cases', [CaseController::class, 'index']);
+        Route::get('/cases/{case}', [CaseController::class, 'show'])->whereNumber('case');
+    });
+
+    Route::middleware('can:cases.manage')->group(function () {
+        Route::get('/case-assignees', [CaseController::class, 'assignees']);
+        Route::post('/groups/{group}/case', [CaseController::class, 'open'])->whereNumber('group');
+        Route::post('/cases/{case}/notes', [CaseController::class, 'note'])->whereNumber('case');
+        Route::post('/cases/{case}/assign', [CaseController::class, 'assign'])->whereNumber('case');
+        Route::post('/cases/{case}/freeze', [CaseController::class, 'freeze'])->whereNumber('case');
+        Route::post('/cases/{case}/unfreeze', [CaseController::class, 'unfreeze'])->whereNumber('case');
+        Route::post('/cases/{case}/close', [CaseController::class, 'close'])->whereNumber('case');
     });
 });

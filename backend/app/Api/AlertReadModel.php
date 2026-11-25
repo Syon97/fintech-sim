@@ -128,12 +128,16 @@ final class AlertReadModel
     public function groups(string $state, int $page, int $per): array
     {
         $having = $state === 'unresolved' ? "HAVING count(a.id) FILTER (WHERE a.status <> 'closed') > 0" : '';
-        $base = "FROM monitoring_alert_groups g LEFT JOIN monitoring_alerts a ON a.group_id = g.id GROUP BY g.id $having";
+        $base = "FROM monitoring_alert_groups g
+                 LEFT JOIN monitoring_alerts a ON a.group_id = g.id
+                 LEFT JOIN monitoring_cases c ON c.group_id = g.id
+                 GROUP BY g.id, c.id $having";
 
-        $total = (int) DB::selectOne("SELECT count(*) AS c FROM (SELECT g.id $base) t")->c;
+        $total = (int) DB::selectOne("SELECT count(*) AS n FROM (SELECT g.id $base) t")->n;
         $rows = DB::select(
             "SELECT g.id, g.account_number, g.alert_count, g.max_score, g.first_alert_at, g.last_alert_at,
-                    count(a.id) FILTER (WHERE a.status <> 'closed') AS unresolved
+                    count(a.id) FILTER (WHERE a.status <> 'closed') AS unresolved,
+                    c.id AS case_id, c.status AS case_status
                $base
               ORDER BY g.max_score DESC, g.last_alert_at DESC, g.id DESC
               LIMIT ? OFFSET ?",
@@ -149,6 +153,7 @@ final class AlertReadModel
                 'max_score' => (int) $r->max_score,
                 'first_alert_at' => self::iso($r->first_alert_at),
                 'last_alert_at' => self::iso($r->last_alert_at),
+                'case' => $r->case_id === null ? null : ['id' => (int) $r->case_id, 'status' => $r->case_status],
             ], $rows),
             'page' => $page,
             'per_page' => $per,

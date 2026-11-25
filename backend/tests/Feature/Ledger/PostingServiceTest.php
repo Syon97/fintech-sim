@@ -106,7 +106,7 @@ class PostingServiceTest extends TestCase
     public function test_frozen_account_cannot_be_posted_to(): void
     {
         $this->deposit($this->alice, 5_000, 'k1');
-        $this->accounts->freeze($this->alice);
+        $this->accounts->freeze($this->alice, 'ops.user', 'Test freeze');
 
         $this->assertRejected('ACCOUNT_NOT_POSTABLE', fn () => $this->deposit($this->alice, 1_000, 'k2'));
         $this->assertSame(5_000, $this->balance($this->alice));

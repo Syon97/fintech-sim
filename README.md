@@ -14,7 +14,7 @@ under concurrency, auditability, and business-configurable controls.
 | 1 | Ledger core: accounts, posting, idempotency, reversals, reconciliation, concurrency stress test | Done |
 | 2 | Event outbox between ledger and monitoring | Done |
 | 3 | Monitoring engine: configurable rules, alerts, backtesting | Done |
-| 4 | Case management and analyst UI (React + TypeScript) | In progress (accounts and roles, alert and group API) |
+| 4 | Case management and analyst UI (React + TypeScript) | In progress (accounts and roles, alert API, cases and account freeze) |
 | 5 | Reporting, synthetic data generator, demo | Planned |
 
 ## Architecture
@@ -71,6 +71,10 @@ fintech-sim/
 | Every action is attributed to the logged-in person | Actor is taken from the session; a test forbids reading it from the request |
 | An open alert has no owner; one in progress always has one | CHECK constraint |
 | Screens never rebuild business wording | The API returns the explanation, score breakdown, evidence and timeline as sentences |
+| An account's status cannot change without an audit record | Deferred constraint trigger checks the audit row at COMMIT |
+| A freeze and its case record commit together | One transaction in the application layer; the ledger never imports monitoring, and monitoring never imports the ledger |
+| A case closes only when every alert is decided | Service check plus a database trigger |
+| A finished case cannot gain late alerts | Closing takes the per-account lock; later alerts start a new group |
 
 The rules are enforced twice on purpose: in the service for clear errors, and in
 the database so that a bug in application code still cannot store a wrong ledger.

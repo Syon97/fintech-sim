@@ -20,4 +20,7 @@ final class LedgerException extends RuntimeException
     public static function transactionNotFound(string $id): self { return new self('TRANSACTION_NOT_FOUND', "Transaction $id does not exist"); }
     public static function cannotReverse(string $id, string $why): self { return new self('CANNOT_REVERSE', "Transaction $id cannot be reversed: $why"); }
     public static function alreadyReversed(string $id): self { return new self('ALREADY_REVERSED', "Transaction $id has already been reversed"); }
+    public static function alreadyFrozen(int $id): self { return new self('ALREADY_FROZEN', "Account $id is already frozen"); }
+    public static function notFrozen(int $id): self { return new self('NOT_FROZEN', "Account $id is not frozen"); }
+    public static function accountClosed(int $id): self { return new self('ACCOUNT_CLOSED', "Account $id is closed"); }
 }

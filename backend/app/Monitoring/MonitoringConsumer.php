@@ -9,7 +9,7 @@ use RuntimeException;
 
 final class MonitoringConsumer implements EventConsumer
 {
-    private const LOCK_NAMESPACE = 7001;
+    public const LOCK_NAMESPACE = 7001;
 
     public function __construct(
         private readonly ActivityStore $activity,
