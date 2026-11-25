@@ -41,10 +41,8 @@ export interface AlertDetail extends AlertSummary {
   timeline: TimelineEntry[];
 }
 
-// TODO(verify): the allowed dispositions live in the backend (AlertWorkflow).
-// Replace these values with the real ones; the server answers 422 for unknown values.
+// Must match AlertWorkflow::DISPOSITIONS in the backend. The server rejects anything else.
 export const DISPOSITIONS: { value: string; label: string }[] = [
   { value: 'false_positive', label: 'Nothing wrong: a false alarm' },
-  { value: 'suspicious', label: 'Genuinely suspicious' },
-  { value: 'escalated', label: 'Needs someone senior to decide' },
+  { value: 'confirmed_suspicious', label: 'Confirmed suspicious' },
 ];
