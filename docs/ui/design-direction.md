@@ -39,3 +39,15 @@ Warm paper background, near-black ink, one muted accent, a humane serif for head
 sans for data. Hallmark's catalogue lists themes whose briefs sit close to ours (Dusk, bank
 reconciliation; Furrow, farm records; Dose, a family medication app). We will look at them
 before choosing and write the choice here.
+
+## Theme: Furrow (interpretation)
+Chosen: Hallmark's "Furrow" theme (listed as "Fieldbook, farm records").
+Status: the theme's own spec file could not be read when this was written, so
+`frontend/src/tokens.css` is an interpretation of the one-line description: warm
+paper, near-black ink, one muted green accent, a humane serif for headings and
+system sans for data. If the real spec is later pasted in, only `tokens.css`
+should need to change, because no colour or font family appears anywhere else.
+
+Floor checks applied in Slice 4: visible focus, reduced-motion, risk always
+shown as a word plus a number (never colour alone), tabular figures, phone width,
+no eyebrows or tracked capitals, honest empty states, a quiet "synthetic data" note.

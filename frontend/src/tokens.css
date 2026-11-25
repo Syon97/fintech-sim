@@ -1,0 +1,26 @@
+/* Material: "Furrow" interpretation (warm paper, dark ink, one muted accent).
+   NOTE: written from the theme's one-line description, not its spec file.
+   All colours and font families live here and nowhere else. */
+:root {
+  --paper: #f6f1e7;
+  --paper-raised: #fbf8f1;
+  --ink: #1f1b16;
+  --ink-soft: #5b5348;
+  --rule: #d9d0bf;
+  --accent: #3f5d3a;
+  --accent-ink: #ffffff;
+  --risk-low: #5b5348;
+  --risk-mid: #8a5a00;
+  --risk-high: #8f2a1c;
+  --focus: #1d4ed8;
+
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --step-0: 1rem;
+  --step--1: 0.875rem;
+  --step-1: 1.25rem;
+  --step-2: 1.75rem;
+  --space: 1rem;
+  --measure: 62rem;
+}
