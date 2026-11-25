@@ -1,5 +1,5 @@
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public reason?: string) { super(message); }
 }
 
 function cookie(name: string): string | null {
@@ -43,7 +43,7 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   }
   const text = await res.text();
   const json = text ? safeParse(text) : null;
-  if (!res.ok) throw new ApiError(res.status, humaneMessage(res.status, json?.message));
+  if (!res.ok) throw new ApiError(res.status, humaneMessage(res.status, json?.message), json?.reason);
   return json as T;
 }
 

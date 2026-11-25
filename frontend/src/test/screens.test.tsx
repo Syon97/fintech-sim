@@ -11,7 +11,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('AlertQueue', () => {
   it('shows an explanation sentence and a risk word with the number', async () => {
-    mockFetch({ data: [{ id: 1, status: 'open', explanation: 'Maya received RM 12,000 in one go.', score: 82, created_at: '2026-01-10T09:00:00Z' }] });
+    mockFetch({ data: [{ id: 1, status: 'open', explanation: 'Maya received RM 12,000 in one go.', risk_score: 82, occurred_at: '2026-01-10T09:00:00Z', assignee: null }] });
     render(<MemoryRouter><AlertQueue /></MemoryRouter>);
     expect(await screen.findByText('Maya received RM 12,000 in one go.')).toBeInTheDocument();
     expect(screen.getByText(/High risk \(82\)/)).toBeInTheDocument();

@@ -37,3 +37,9 @@ input, select, textarea { font: inherit; padding: .5rem; border: 1px solid var(-
 .timeline li { padding: 0 0 .9rem 1rem; }
 @media (max-width: 40rem) { .row { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
+caption { text-align: left; padding-bottom: .4rem; }
+th, td { text-align: left; padding: .4rem .6rem .4rem 0; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; }
+.r { text-align: right; }

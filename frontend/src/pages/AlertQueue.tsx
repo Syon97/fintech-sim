@@ -44,11 +44,11 @@ export function AlertQueue() {
               <div>
                 <Link className="title" to={`/alerts/${a.id}`}>{a.explanation}</Link>
                 <div className="muted">
-                  <time dateTime={a.created_at} title={exactTime(a.created_at)}>{relativeTime(a.created_at)}</time>
-                  {a.assignee ? ` — with ${a.assignee}` : ' — not picked up yet'}
+                  Happened <time dateTime={a.occurred_at} title={exactTime(a.occurred_at)}>{relativeTime(a.occurred_at)}</time>
+                  {a.assignee ? `, with ${a.assignee}` : ', not picked up yet'}
                 </div>
               </div>
-              <span className={`risk num ${riskBand(a.score)}`}>{a.score_label ?? riskWord(a.score)} ({a.score})</span>
+              <span className={`risk num ${riskBand(a.risk_score)}`}>{riskWord(a.risk_score)} ({a.risk_score})</span>
             </li>
           ))}
         </ul>
