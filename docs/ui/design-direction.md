@@ -40,14 +40,26 @@ sans for data. Hallmark's catalogue lists themes whose briefs sit close to ours 
 reconciliation; Furrow, farm records; Dose, a family medication app). We will look at them
 before choosing and write the choice here.
 
-## Theme: Furrow (interpretation)
-Chosen: Hallmark's "Furrow" theme (listed as "Fieldbook, farm records").
-Status: the theme's own spec file could not be read when this was written, so
-`frontend/src/tokens.css` is an interpretation of the one-line description: warm
-paper, near-black ink, one muted green accent, a humane serif for headings and
-system sans for data. If the real spec is later pasted in, only `tokens.css`
-should need to change, because no colour or font family appears anywhere else.
+## Theme: Furrow (from Hallmark, applied in Phase 4)
+Theme: Hallmark's "Furrow" (modern-minimal, warm manila paper, near-black ink).
+Scope: Hallmark's "app screen" rules. The theme lends its palette, type faces,
+radii and surfaces; it does not lend its layout, map or ornament, because this is a
+tool people work in, not a page people read.
 
-Floor checks applied in Slice 4: visible focus, reduced-motion, risk always
-shown as a word plus a number (never colour alone), tabular figures, phone width,
-no eyebrows or tracked capitals, honest empty states, a quiet "synthetic data" note.
+- **Tokens** live only in `frontend/src/tokens.css` (taken from the theme file).
+  No colour or font family appears anywhere else.
+- **Type:** Red Hat Display 600 for headings, Red Hat Text for everything else,
+  Red Hat Mono only for figures people copy (times and amounts in tables). Served
+  locally through `@fontsource`, so the demo makes no third-party font requests.
+- **Accent (tangerine)** is a fill with dark ink on it: the primary action and the
+  selected tab. It is never used as text colour (it fails contrast against paper).
+- **Risk** is always a word plus a number; high risk is also red, never red alone.
+- **States:** every screen that loads data has loading (skeleton rows), empty
+  (says what belongs here), error (plain wording and "Try again") and full.
+- **State in the URL:** the queue filter (`?status=`) and the case filter (`?show=`).
+- **Irreversible or money-affecting actions** (close, freeze, unfreeze, assign) wait
+  for the server and ask for a reason; reversible ones (start, release) update at once.
+
+Checks run in Slice 5b: Hallmark `sloplint --scope app --render` on five screens at
+desktop and 375px phone width: 0 FAIL, 0 REFLEX, 0 WARN. Contrast computed for
+every text pair: lowest is 5.4:1 (red on paper); focus ring 3.8:1 against paper.

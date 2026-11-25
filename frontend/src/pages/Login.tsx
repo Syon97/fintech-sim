@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { ApiError } from '../api';
+import { Problem } from '../components';
 
 export function Login() {
   const { login } = useAuth();
@@ -32,7 +33,7 @@ export function Login() {
           <label htmlFor="p">Password</label>
           <input id="p" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
-        {problem && <div className="problem" role="alert">{problem}</div>}
+        {problem && <Problem message={problem} />}
         <button className="primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
       </form>
     </main>

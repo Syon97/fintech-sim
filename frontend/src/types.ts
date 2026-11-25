@@ -46,3 +46,62 @@ export const DISPOSITIONS: { value: string; label: string }[] = [
   { value: 'false_positive', label: 'Nothing wrong: a false alarm' },
   { value: 'confirmed_suspicious', label: 'Confirmed suspicious' },
 ];
+
+// ---- Cases (shapes from real responses, Nov 2026) ----
+export interface Person { username: string; name: string }
+
+export interface Group {
+  id: number;
+  account_number: string;
+  alert_count: number;
+  unresolved: number;
+  max_score: number;
+  first_alert_at: string;
+  last_alert_at: string;
+  // Shape when a case exists has not been captured yet; read defensively.
+  case: { id?: number; status?: string } | null;
+}
+
+export interface CaseSummary {
+  id: number;
+  group_id: number;
+  status: 'open' | 'closed';
+  outcome: string | null;
+  outcome_label: string | null;
+  opened_at: string;
+  closed_at: string | null;
+  owner: Person | null;
+  account: { number: string; status: string };
+  alerts: { total: number; unresolved: number; max_score: number };
+}
+
+export interface CaseAlert {
+  id: number; status: string; severity: string; risk_score: number;
+  explanation: string; rule_name: string; disposition: string | null;
+  occurred_at: string; assignee: string | null;
+}
+
+export interface CaseDetail {
+  id: number;
+  status: 'open' | 'closed';
+  outcome: string | null;
+  outcome_label: string | null;
+  closing_note: string | null;
+  opened_at: string;
+  closed_at: string | null;
+  owner: Person | null;
+  opened_by: Person | null;
+  account: { number: string; status: string };
+  group: { id: number; alert_count: number; max_score: number; first_alert_at: string; last_alert_at: string };
+  alerts: CaseAlert[];
+  timeline: { at: string; actor: Person | null; sentence: string; note: string | null }[];
+  can: { add_note: boolean; assign: boolean; freeze: boolean; unfreeze: boolean; close: boolean };
+  close_blockers: string[];
+  must_escalate: boolean;
+}
+
+// Must match CaseService::OUTCOMES in the backend.
+export const OUTCOMES: { value: string; label: string }[] = [
+  { value: 'no_further_action', label: 'No further action needed' },
+  { value: 'escalated_to_compliance', label: 'Escalate to compliance' },
+];

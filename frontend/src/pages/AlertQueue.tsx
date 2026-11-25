@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api, unwrap } from '../api';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Problem, SkeletonRows } from '../components';
+import { useFetch } from '../hooks';
 import { exactTime, relativeTime, riskBand, riskWord } from '../format';
 import type { AlertSummary } from '../types';
 
@@ -11,29 +11,22 @@ const FILTERS = [
 ] as const;
 
 export function AlertQueue() {
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]['key']>('open');
-  const [items, setItems] = useState<AlertSummary[] | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    setItems(null); setProblem(null);
-    api<unknown>('/alerts?status=' + filter)
-      .then((b) => live && setItems(unwrap<AlertSummary[]>(b)))
-      .catch((e) => live && setProblem(e.message));
-    return () => { live = false; };
-  }, [filter]);
+  // The filter lives in the address (?status=...) so a refresh or a shared link keeps it.
+  const [params, setParams] = useSearchParams();
+  const raw = params.get('status');
+  const filter = FILTERS.some((f) => f.key === raw) ? raw! : 'open';
+  const { data: items, problem, reload } = useFetch<AlertSummary[]>('/alerts?status=' + filter);
 
   return (
     <section>
       <h1>Alerts</h1>
       <div className="tabs" role="group" aria-label="Show alerts that are">
         {FILTERS.map((f) => (
-          <button key={f.key} aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>{f.label}</button>
+          <button key={f.key} aria-pressed={filter === f.key} onClick={() => setParams({ status: f.key })}>{f.label}</button>
         ))}
       </div>
-      {problem && <div className="problem" role="alert">{problem}</div>}
-      {!problem && items === null && <p className="muted">Loading alerts…</p>}
+      {problem && <Problem message={problem} onRetry={reload} />}
+      {!problem && items === null && <SkeletonRows label="Loading alerts…" />}
       {items && items.length === 0 && (
         <p className="empty">Nothing here right now. New alerts appear when a transaction trips a rule.</p>
       )}

@@ -1,26 +1,22 @@
-/* Material: "Furrow" interpretation (warm paper, dark ink, one muted accent).
-   NOTE: written from the theme's one-line description, not its spec file.
-   All colours and font families live here and nowhere else. */
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Furrow (by request)
+ * nav: top bar · signature: the alert queue · states: loading, empty, error, full
+ * axes: light/grotesk-sans/warm · posture: committed · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, accent is fill-only with ink text; status never colour alone */
 :root {
-  --paper: #f6f1e7;
-  --paper-raised: #fbf8f1;
-  --ink: #1f1b16;
-  --ink-soft: #5b5348;
-  --rule: #d9d0bf;
-  --accent: #3f5d3a;
-  --accent-ink: #ffffff;
-  --risk-low: #5b5348;
-  --risk-mid: #8a5a00;
-  --risk-high: #8f2a1c;
-  --focus: #1d4ed8;
-
-  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-
-  --step-0: 1rem;
-  --step--1: 0.875rem;
-  --step-1: 1.25rem;
-  --step-2: 1.75rem;
-  --space: 1rem;
-  --measure: 62rem;
+  color-scheme: light;
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-display: 1.728rem; --text-section: 1.2rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro: 120ms; --dur-short: 220ms;
+  --color-error: oklch(52% 0.19 27); --color-success: oklch(50% 0.12 150);
+  --container: 72rem;
+  --color-paper: oklch(96% 0.011 85); --color-paper-2: oklch(99.5% 0.005 85); --color-paper-3: oklch(92% 0.016 85);
+  --color-ink: oklch(18% 0.006 60); --color-ink-2: oklch(28% 0.008 60); --color-muted: oklch(44% 0.012 60); --color-rule: oklch(88% 0.013 85);
+  --color-accent: oklch(70% 0.19 40); --color-accent-ink: oklch(18% 0.006 60); --color-accent-soft: oklch(91% 0.05 50); --color-focus: oklch(60% 0.19 40);
+  --color-sheet: oklch(99.3% 0.004 85);
+  --color-green: oklch(48% 0.11 150); --color-green-soft: oklch(92% 0.04 150);
+  --font-display: "Red Hat Display", "Red Hat Text", ui-sans-serif, sans-serif; --font-body: "Red Hat Text", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: "Red Hat Mono", ui-monospace, monospace;
+  --radius-card: 10px; --radius-pill: 6px; --rule-hair: 1px;
+  --tracking-display: -0.035em; --display-weight: 600;
 }

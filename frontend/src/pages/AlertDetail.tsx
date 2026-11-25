@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Problem, SkeletonRows } from '../components';
 import { api, unwrap } from '../api';
 import { exactTime, relativeTime, riskBand, riskWord } from '../format';
 import { DISPOSITIONS, type AlertDetail as Detail } from '../types';
@@ -38,8 +39,8 @@ export function AlertDetail() {
     } finally { setBusy(false); }
   }
 
-  if (problem && !a) return <div className="problem" role="alert">{problem}</div>;
-  if (!a) return <p className="muted">Loading alert…</p>;
+  if (problem && !a) return <Problem message={problem} onRetry={() => { setProblem(null); void load(); }} />;
+  if (!a) return <SkeletonRows n={3} label="Loading alert…" />;
 
   const evidence = showAll ? a.evidence : a.evidence.slice(0, EVIDENCE_PREVIEW);
   const closed = a.status === 'closed';
@@ -54,7 +55,7 @@ export function AlertDetail() {
         {a.assignee ? `, with ${a.assignee}` : ', not picked up yet'}</span>
       </p>
       {closed && <p>Closed as <strong>{a.disposition}</strong>{a.closed_at && <> <time dateTime={a.closed_at} title={exactTime(a.closed_at)}>{relativeTime(a.closed_at)}</time></>}.</p>}
-      {problem && <div className="problem" role="alert">{problem}</div>}
+      {problem && <Problem message={problem} />}
 
       {!closed && (a.can?.start || a.can?.release) && (
         <div className="actions">
